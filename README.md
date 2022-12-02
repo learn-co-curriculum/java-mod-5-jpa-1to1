@@ -15,7 +15,7 @@ Relational database tables can be built such that they associate with one
 another via primary and foreign keys. JPA provides us with annotations that
 streamline model association in our program.
 
-In this lesson, we will use implement the following relationship:
+In this lesson, we will  implement the following relationship:
 
 ![One to One relationship erd](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/student_idcard_erd.png)
 
@@ -414,19 +414,19 @@ a new column with null values for the relationship in each table.
 
 `SELECT * FROM STUDENT_DATA;`
 
-| ID  | DOB        | NAME | STUDENTGROUP | CARD_ID |
-|-----|------------|------|--------------| ------- |
-| 1   | 2000-01-01 | Jack | ROSE         | null    |
-| 2   | 1999-01-01 | Lee  | DAISY        | null    |
-| 3   | 1980-01-01 | Amal | LOTUS        | null    |
+| ID   | DOB         | NAME  | STUDENTGROUP  | CARD_ID  |
+|------|-------------|-------|---------------|----------|
+| 1    | 2000-01-01  | Jack  | ROSE          | null     |
+| 2    | 1999-01-01  | Lee   | DAISY         | null     |
+| 3    | 1980-01-01  | Amal  | LOTUS         | null     |
 
 `SELECT * FROM ID_CARD;`
 
-| ID  | ISACTIVE | STUDENT_ID |
-|-----|----------| ---------- |
-| 4   | true     | null       |
-| 5   | false    | null       |
-| 6   | false    | null       |
+| ID   | ISACTIVE  | STUDENT_ID  |
+|------|-----------|-------------|
+| 4    | true      | null        |
+| 5    | false     | null        |
+| 6    | false     | null        |
 
 If we simply put a `@OneToOne` annotation on
 both the properties, the database will create foreign keys in both tables, but
@@ -569,8 +569,8 @@ the student table.
 ## Fetching Data with Relationships
 
 JPA performs join operations automatically to get related data from an entity.
-For one-to-one relationships, it performs the join operation on the first query
-but we can defer this operation to when the data is accessed in the program
+For one-to-one relationships, it performs the join operation on the first query,
+but we can defer this operation until the data is accessed in the program
 using the `fetch` property on the `@OneToOne` annotation.
 
 1. Change the `hibernate.hbm2ddl.auto` property in the `persistence.xml` to `none`
