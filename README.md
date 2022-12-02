@@ -934,6 +934,42 @@ public class JpaCreate {
 We have learned how to create one-to-one relationships between entities and
 fetch associated data efficiently in this lesson.
 
+
+A student is associated with one id card, and
+we use the `mappedBy` property to ensure the id card
+is associated with the same student.
+
+The `Student` class stores the relationship as:
+
+```java
+@Entity
+@Table(name = "STUDENT_DATA")
+public class Student {
+   ...
+
+   @OneToOne(fetch = FetchType.LAZY)
+   private IdCard card;
+   
+   ...
+}
+```
+
+The `IdCard` class stores the relationship as:
+
+```java
+@Entity
+@Table(name = "ID_CARD")
+public class IdCard {
+   ...
+
+   @OneToOne(mappedBy = "card")
+   private Student student;
+   
+   ...
+}
+```
+
+
 ## References
 
 - [Java Persistence/Relationships](https://en.wikibooks.org/wiki/Java_Persistence/Relationships)  
