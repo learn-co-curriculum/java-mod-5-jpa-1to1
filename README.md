@@ -17,7 +17,7 @@ streamline model association in our program.
 
 In this lesson, we will use implement the following relationship:
 
-![One to One relationship table](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/1to1_erd.png)
+![One to One relationship erd](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/student_idcard_erd.png)
 
 Each student has one ID card and each ID card belongs to one student. We will
 use JPA annotations to create the one-to-one relationship.
@@ -258,7 +258,7 @@ sequence generator for each table.
 
 Here is the relationship we are modeling for reference:
 
-![One to one relationship table](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/1to1_erd.png)
+![One to One relationship erd](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/student_idcard_erd.png)
 
 Both the `Student` and `IdCard` classes have to be modified to model the
 relationship. Here are the steps we have to follow:
