@@ -713,6 +713,222 @@ Hibernate:
 IdCard{id=4, isActive=true}
 ```
 
+
+
+## Code Check
+
+Since we have modified and worked on different files, here are the final
+versions of `Student`, `IdCard`, and `JpaCreate` for reference.
+
+#### Student
+
+```java
+package org.example.model;
+
+import javax.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+@Table(name = "STUDENT_DATA")
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+
+    private String name;
+
+    private LocalDate dob;
+
+    @Enumerated(EnumType.STRING)
+    private StudentGroup studentGroup;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private IdCard card;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public LocalDate getDob() {
+        return dob;
+    }
+
+    public void setDob(LocalDate dob) {
+        this.dob = dob;
+    }
+
+    public StudentGroup getStudentGroup() {
+        return studentGroup;
+    }
+
+    public void setStudentGroup(StudentGroup studentGroup) {
+        this.studentGroup = studentGroup;
+    }
+
+    public IdCard getCard() {
+        return card;
+    }
+
+    public void setCard(IdCard card) {
+        this.card = card;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", dob=" + dob +
+                ", studentGroup=" + studentGroup +
+                '}';
+    }
+}
+```
+
+
+#### IdCard
+
+
+```java
+package org.example.model;
+
+import javax.persistence.*;
+
+@Entity
+@Table(name = "ID_CARD")
+public class IdCard {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private int id;
+
+    private boolean isActive;
+
+    @OneToOne(mappedBy = "card")
+    private Student student;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
+    }
+
+    @Override
+    public String toString() {
+        return "IdCard{" +
+                "id=" + id +
+                ", isActive=" + isActive +
+                '}';
+    }
+}
+```
+
+#### JpaCreate
+
+
+```java
+package org.example;
+
+import org.example.model.IdCard;
+import org.example.model.Student;
+import org.example.model.StudentGroup;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.time.LocalDate;
+
+public class JpaCreate {
+    public static void main(String[] args) {
+        // create a new student instance
+        Student student1 = new Student();
+        student1.setName("Jack");
+        student1.setDob(LocalDate.of(2000,1,1));
+        student1.setStudentGroup(StudentGroup.ROSE);
+
+        // create a new student instance
+        Student student2 = new Student();
+        student2.setName("Lee");
+        student2.setDob(LocalDate.of(1999,1,1));
+        student2.setStudentGroup(StudentGroup.DAISY);
+
+        // create a new student instance
+        Student student3 = new Student();
+        student3.setName("Amal");
+        student3.setDob(LocalDate.of(1980,1,1));
+        student3.setStudentGroup(StudentGroup.LOTUS);
+
+
+        // create id cards
+        IdCard card1 = new IdCard();
+        card1.setActive(true);
+        IdCard card2 = new IdCard();
+        IdCard card3 = new IdCard();
+
+        // create student-card associations
+        student1.setCard(card1);
+        student2.setCard(card2);
+        student3.setCard(card3);
+
+        // create EntityManager
+        EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("example");
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+
+        // access transaction object
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        // create and use transactions
+        transaction.begin();
+        //persist the students
+        entityManager.persist(student1);
+        entityManager.persist(student2);
+        entityManager.persist(student3);
+        //persist the id cards
+        entityManager.persist(card1);
+        entityManager.persist(card2);
+        entityManager.persist(card3);
+        transaction.commit();
+
+        //close entity manager and factory
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+}
+```
+
+
+
+
 ## Conclusion
 
 We have learned how to create one-to-one relationships between entities and
