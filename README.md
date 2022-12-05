@@ -713,7 +713,104 @@ Hibernate:
 IdCard{id=4, isActive=true}
 ```
 
+## Caution when working with circular references
 
+Since `Student` and `IdCard` both contain a reference to the other class, we have
+what is termed **circular** or **cyclic** references.
+
+
+```java
+@Entity
+@Table(name = "STUDENT_DATA")
+public class Student {
+   ...
+
+    @OneToOne(fetch = FetchType.LAZY)
+    private IdCard card;
+   
+   ...
+
+```
+
+
+```java
+@Entity
+@Table(name = "ID_CARD")
+public class IdCard {
+   ...
+
+    @OneToOne(mappedBy = "card")
+    private Student student;
+   
+   ...
+
+```
+
+
+It is important to avoid an infinite cycle of method calls
+if you have IntelliJ generate the `toString()` methods for both classes.
+For example, IntelliJ generates this method for the `Student`
+class, which calls the `toString()` method for the `card`  object reference on the last line
+(don't update your code!):
+
+```java
+    @Override
+    public String toString() {
+        return "Student{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", dob=" + dob +
+                ", studentGroup=" + studentGroup +
+                ", card=" + card +
+                '}';
+    }
+```
+
+IntelliJ generates this method for the `Card` class, which calls the `toString()` method for
+the `student` object reference on the last line (don't update your code!):
+
+```java
+@Override
+    public String toString() {
+        return "IdCard{" +
+                "id=" + id +
+                ", isActive=" + isActive +
+                ", student=" + student +
+                '}';
+    }
+```
+
+Since the relationship is cyclic, the `toString()` methods generated
+by IntelliJ include an infinite cycle of method calls.
+In the final code solution, we removed the object references
+from both `toString()` methods, but it would have been sufficient
+to remove an object reference from just one of the methods:
+
+The `Student` class:
+
+```java
+@Override
+    public String toString() {
+        return "Student{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", dob=" + dob +
+                ", studentGroup=" + studentGroup +
+                '}';
+    }
+```
+
+The `IdCard` class:
+
+```java
+    @Override
+    public String toString() {
+        return "IdCard{" +
+                "id=" + id +
+                ", isActive=" + isActive +
+                '}';
+    }
+```
 
 ## Code Check
 
