@@ -3,6 +3,7 @@
 ## Learning Goals
 
 - Create one-to-one associations between entities with JPA annotations.
+- Pick one entity to be the relationship owner and establish the relationship as bidirectional.
 - Perform eager and lazy fetching of related data from the database.
 
 ## Code Along
@@ -15,16 +16,19 @@ Relational database tables can be built such that they associate with one
 another via primary and foreign keys. JPA provides us with annotations that
 streamline model association in our program.
 
-In this lesson, we will  implement the following relationship:
+In this lesson, we will  implement the following one-to-one relationship:
 
 ![One to One relationship erd](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/student_idcard_erd.png)
 
-Each student has one ID card and each ID card belongs to one student. We will
-use JPA annotations to create the one-to-one relationship.
+- Each `Student` has one `IdCard` and each `IdCard` belongs to one `Student`. 
+- We will use the JPA `@OneToOne` annotation to create the one-to-one relationship.  
+- The `Student` entity will be chosen as the relationship owner, meaning a foreign key reference to
+  the associated `IdCard` entity will be stored in the student database table.
 
 ## Create ID Card Entity and Instances
 
-Create the `IdCard` class in the `model` package and add the following code:
+Create the `IdCard` class in the `model` package and add the following code.
+The `@Table` annotation names the corresponding database table `ID_CARD`.
 
 ```java
 package org.example.model;
@@ -65,11 +69,34 @@ public class IdCard {
    }
 }
 ```
-
 The project structure should now look like this:
 
 ![idcard project structure](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/idcard_projectstructure.png)
 
+Let's remove the `@Table` annotation from the `Student` class.
+JPA will use the class name `Student` as the default name of the database table
+(PostgreSQL names the table with uppercase letters as `STUDENT`).
+
+```java
+@Entity
+public class Student {
+    @Id
+    @GeneratedValue
+    private int id;
+
+    private String name;
+
+    private LocalDate dob;
+
+    @Enumerated(EnumType.STRING)
+    private StudentGroup studentGroup;
+
+    //getters, setters, toString
+    ...
+}
+```
+
+### Persisting `IdCard` objects to the database
 
 1. Edit the `JpaCreate` class, create three new ID cards, and save them in the
 database as shown in the code below.
@@ -143,7 +170,7 @@ public class JpaCreate {
 }
 ```
 
-The Hibernate output shows the creation of the `ID_CARD` table and the `STUDENT_DATA` table:
+The Hibernate output shows the creation of the `ID_CARD` table and the `STUDENT` table:
 
 ```text
 Hibernate: 
@@ -155,7 +182,7 @@ Hibernate:
     )
 Hibernate: 
     
-    create table STUDENT_DATA (
+    create table STUDENT (
        id int4 not null,
         dob date,
         name varchar(255),
@@ -189,21 +216,21 @@ Hibernate:
 Hibernate: 
     insert 
     into
-        STUDENT_DATA
+        STUDENT
         (dob, name, studentGroup, id) 
     values
         (?, ?, ?, ?)
 Hibernate: 
     insert 
     into
-        STUDENT_DATA
+        STUDENT
         (dob, name, studentGroup, id) 
     values
         (?, ?, ?, ?)
 Hibernate: 
     insert 
     into
-        STUDENT_DATA
+        STUDENT
         (dob, name, studentGroup, id) 
     values
         (?, ?, ?, ?)
@@ -231,9 +258,9 @@ Hibernate:
 ```
 
 
-Query the `STUDENT_DATA` and `ID_CARD` tables using the **pgAdmin** query tool:
+Query the `STUDENT` and `ID_CARD` tables using the **pgAdmin** query tool:
 
-`SELECT * FROM STUDENT_DATA;`
+`SELECT * FROM STUDENT;`
 
 | ID  | DOB        | NAME | STUDENTGROUP |
 |-----|------------|------|--------------|
@@ -249,31 +276,41 @@ Query the `STUDENT_DATA` and `ID_CARD` tables using the **pgAdmin** query tool:
 | 5   | false    |
 | 6   | false    |
 
-Notice the `STUDENT_DATA` primary key values are 1,2 and 3, while the `ID_CARD`
+Notice the `STUDENT` primary key values are 1,2 and 3, while the `ID_CARD`
 primary key values are 4, 5, and 6.  PostgreSQL appears to use a single
 sequence generator for both tables.  Other DBMS software may use a separate
 sequence generator for each table.
 
 ## Modeling the Relationship
 
-Here is the relationship we are modeling for reference:
+Here is the one-to-one relationship we are modeling for reference:
 
 ![One to One relationship erd](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/student_idcard_erd.png)
 
 Both the `Student` and `IdCard` classes have to be modified to model the
 relationship. Here are the steps we have to follow:
 
-1. Create fields in both classes to store the associated instance.
-   - Class `Student` will have a new instance variable `IdCard card` to reference the associated id card object.
-   - Class `IdCard` will have a new instance variable `Student student` to reference the associated student object.
-2. Annotate fields with the `@OneToOne` annotation.
-3. Define which table will reference the foreign key by passing the `mappedBy`
-   value to the `@OneToOne` annotation.
-   - Class `IdCard` will have the annotation `@OneToOne(mappedBy = "card")`.
-4. Generate getter/setter methods for the new fields in both classes.
+1. Create fields in both classes annotated with `@OneToOne` to store the associated instance.
+   - Class `Student` will have a new instance variable `IdCard card` to reference the associated id card object.   
+    ```java
+    @OneToOne
+    private IdCard card;
+    ```
+   - Class `IdCard` will have a new instance variable `Student student` to reference the associated student object.    
+    ```java
+    @OneToOne
+    private Student student;
+    ```
+2. Generate getter/setter methods for the new fields in both classes.
+3. Define the entity on the owning side of the relationship (Student). 
+   Add the `mappedBy` attribute in the `@OneToOne` annotation to the entity on the non-owing side (IdCard).
+   We will do this step later in the lesson.
+    ```java
+    @OneToOne(mappedBy = "card")
+    private Student student;
+    ```
 
-
-Edit `Student` to add the `card` field and getter/setter methods as shown:
+First, let's edit `Student` to add the `card` field and getter/setter methods as shown:
 
 ```java
 package org.example.model;
@@ -282,7 +319,6 @@ import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "STUDENT_DATA")
 public class Student {
    @Id
    @GeneratedValue
@@ -350,9 +386,9 @@ public class Student {
 }
 ```
 
-Initially, we will omit the `mappedBy` property to see what happens when both
-classes have `@OneToOne` annotations without mapping. Edit `IdCard` to add
-the `student` field and getter/setter methods as shown:
+Next, edit `IdCard` to add the new `student` field and getter/setter methods
+as shown below. Initially, we will omit the `mappedBy` property to see what happens when both
+classes have `@OneToOne` annotations without mapping. 
 
 ```java
 package org.example.model;
@@ -411,8 +447,10 @@ field to the `IdCard` class, along with getter/setter methods for the new fields
 Run `JpaCreate.main` again to recreate the tables based on the new
 fields.  Query the tables in **pgAdmin** to confirm there is
 a new column with null values for the relationship in each table.
+The fields are null because we did not assign the relationships
+between objects in `JpaCreate`.
 
-`SELECT * FROM STUDENT_DATA;`
+`SELECT * FROM STUDENT;`
 
 | ID   | DOB         | NAME  | STUDENTGROUP  | CARD_ID  |
 |------|-------------|-------|---------------|----------|
@@ -428,22 +466,48 @@ a new column with null values for the relationship in each table.
 | 5    | false     | null        |
 | 6    | false     | null        |
 
+
+## Assigning an owner to the relationship
+
 If we simply put a `@OneToOne` annotation on
 both the properties, the database will create foreign keys in both tables, but
 it might be possible to set the fields incorrectly and not maintain the one-to-one relationship.
 
 For example, we could set `card_id` value to `4` for the student with id `1`
-(updating the first row in the `STUDENT_DATA` table), and set the
-`student_id` value to `3` for the card with id `4` (updating the first row in the `ID_CARD` table).
+(updating the first row in the `STUDENT` table), and accidentally set the
+`student_id` value to `3` instead of `1` for the card with id `4`
+(updating the first row in the `ID_CARD` table).
 This would violate the one-to-one relationship.
 
-Instead, we need to define that the `card` and `student` property in the two models are
-connected to each other, i.e., they are the same relationship definition. The
-`mappedBy` property used in the `IdCard` class tells JPA that the `student`
-property in the class has a one-to-one relationship with the `card` property in
-the `Student` class.
+Instead, we need to enforce that the `card` and `student` property in the two entities are
+connected to each other, i.e., they are the same relationship. The best way to do this
+is to store the relationship in one place in the database.
 
-Edit `IdCard` to set the `mappedBy` property of the one-to-one relationship:
+
+When defining a relationship between two entities,
+a common task is identifying the **owning side** of the relationship.
+
+- The entity on the owning side is referred to as the  **relationship owner**
+  and a foreign key referencing the entity on the **non-owning**
+  side is stored in their database table.
+- The entity on the non-owning side will **not** have a foreign key column in their table.
+
+![one to one relationship student owning side](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/one_to_one_student_owning_side.png)
+
+In the one-to-one relationship between `Student` and `IdCard`,
+we will pick `Student` as the owning side of the relationship.
+
+- The `Student` entity will own the relationship, which means
+  the `STUDENT` table has a foreign key column `card_id`
+  containing the id of the associated `IdCard` entity.
+- The `IdCard` entity is on the non-owning side. The  `IdCard` class
+  assigns the `mappedBy` attribute to `card` to establish the relationship as bidirectional.
+  - The `ID_CARD` table does not store a foreign key reference to `STUDENT`.
+  - JPA will use the `card` field found in the `Student` entity to figure out the student
+    associated with a given `IdCard` entity.
+      
+
+Edit `IdCard` to set the `mappedBy` property of the one-to-one relationship to `card`:
 
 ```java
 package org.example.model;
@@ -465,11 +529,14 @@ public class IdCard {
     //getters/setters/toString
 ```
 
-Modify the `JpaCreate` class to associate a specific `IdCard` entity for
-each `Student` entity.  This should be done before persisting the entities.
-JPA will enforce the relationship to be one-to-one by removing the student
+JPA will enforce the relationship to be one-to-one by omitting the student
 foreign key column in the `ID_CARD` table.  The relationship will be
-stored as a column in the `STUDENT_DATA` table only.
+stored as a column in the `STUDENT` table only.
+
+Since `Student` owns the relationship, we update `JpaCreate`
+to associate a specific `IdCard` entity for each `Student` entity
+by calling the `setCard(Card card)` method.
+This should be done before persisting the entities.
 
 ```java
 package org.example;
@@ -542,10 +609,10 @@ public class JpaCreate {
 }
 ```
 
-If we run `JpaCreate.main` and the query the tables in **pgAdmin**, the tables will look like
+If we run `JpaCreate.main` and query the tables in **pgAdmin**, the tables will look like
 the following:
 
-`SELECT * FROM STUDENT_DATA;`
+`SELECT * FROM STUDENT;`
 
 | ID  | DOB        | NAME | STUDENTGROUP | CARD_ID |
 |-----|------------|------|--------------|---------|
@@ -562,7 +629,7 @@ the following:
 | 6   | false    |
 
 Notice the `ID_CARD` table no longer stores the `Student` id.
-Since the relationship is one-to-one, we can always figure out
+Since the relationship is one-to-one and bidirectional, we can always figure out
 which student is associated with a specific id card by querying
 the student table.
 
@@ -621,7 +688,7 @@ Hibernate:
         idcard1_.id as id1_0_1_,
         idcard1_.isActive as isactive2_0_1_ 
     from
-        STUDENT_DATA student0_ 
+        STUDENT student0_ 
     left outer join
         ID_CARD idcard1_ 
             on student0_.card_id=idcard1_.id 
@@ -653,7 +720,6 @@ import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "STUDENT_DATA")
 public class Student {
    @Id
    @GeneratedValue
@@ -690,7 +756,7 @@ Hibernate:
         student0_.name as name3_1_0_,
         student0_.studentGroup as studentg4_1_0_ 
     from
-        STUDENT_DATA student0_ 
+        STUDENT student0_ 
     where
         student0_.id=?
 Student{id=1, name='Jack', dob=2000-01-01, studentGroup=ROSE}
@@ -706,7 +772,7 @@ Hibernate:
     from
         ID_CARD idcard0_ 
     left outer join
-        STUDENT_DATA student1_ 
+        STUDENT student1_ 
             on idcard0_.id=student1_.card_id 
     where
         idcard0_.id=?
@@ -721,7 +787,6 @@ what is termed **circular** or **cyclic** references.
 
 ```java
 @Entity
-@Table(name = "STUDENT_DATA")
 public class Student {
    ...
 
@@ -826,7 +891,6 @@ import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "STUDENT_DATA")
 public class Student {
     @Id
     @GeneratedValue
@@ -897,7 +961,6 @@ public class Student {
 
 #### IdCard
 
-
 ```java
 package org.example.model;
 
@@ -935,10 +998,6 @@ public class IdCard {
         return student;
     }
 
-    public void setStudent(Student student) {
-        this.student = student;
-    }
-
     @Override
     public String toString() {
         return "IdCard{" +
@@ -948,6 +1007,11 @@ public class IdCard {
     }
 }
 ```
+
+Since `Student` owns the relationship, it is best to either remove the `setStudent` method from the `IdCard` class,
+or edit `setStudent` to call the `setIdCard` on the student parameter as well.
+We removed the `setStudent` method to force the relationship to always
+be established through the relationship owner `Student`.
 
 #### JpaCreate
 
@@ -1023,49 +1087,59 @@ public class JpaCreate {
 }
 ```
 
-
-
-
 ## Conclusion
 
 We have learned how to create one-to-one relationships between entities and
 fetch associated data efficiently in this lesson.
 
 
-A student is associated with one id card, and
-we use the `mappedBy` property to ensure the id card
-is associated with the same student.
+To implement a one-to-one relationship:
 
-The `Student` class stores the relationship as:
+- One entity is chosen as the relationship owner.
+- The table corresponding to the owning side will store the foreign key reference.
+- The owning side Java class adds a new field with the annotation `@OneToOne`.
+    - The field stores a single reference to the non-owning side entity.
+    - The `fetch` attribute is optional, but can be used to improve efficiency by delaying
+      when the non-owning side entity is fetched.
+- The non-owning side Java class adds a new field with the annotation `@OneToOne.`
+    - The field stores a single reference to the owning side entity.
+    - The `mappedBy` property references the `@OneToOne` field that was added to the owning side class.
 
-```java
-@Entity
-@Table(name = "STUDENT_DATA")
-public class Student {
-   ...
+![one to one relationship student owning side](https://curriculum-content.s3.amazonaws.com/6036/java-mod-5-jpa-1to1/one_to_one_student_owning_side.png)
 
-   @OneToOne(fetch = FetchType.LAZY)
-   private IdCard card;
-   
-   ...
-}
-```
+We picked `Student` as the relationship owner.
 
-The `IdCard` class stores the relationship as:
-
-```java
-@Entity
-@Table(name = "ID_CARD")
-public class IdCard {
-   ...
-
-   @OneToOne(mappedBy = "card")
-   private Student student;
-   
-   ...
-}
-```
-
+- The owning side `Student` class has a field with the annotation `@OneToOne`.
+  We also implemented lazy fetching of the associated `IdCard` entity.
+  The `Student` class stores the relationship as:       
+  ```java
+  @Entity
+  @Table(name = "STUDENT")
+  public class Student {
+     ...
+     
+     @OneToOne(fetch = FetchType.LAZY)
+     private IdCard card;
+     
+     ...
+  }
+  ```
+- The non-owning side `IdCard` class has a field with the annotation `@OneToOne` with the
+  `mappedBy` attribute set to `card`, which is the relationship field defined
+  by the owning side entity `Student`. A student is associated with one id card, and
+  we use the `mappedBy` property to ensure the id card is associated with the same student.
+  ```java
+  @Entity
+  @Table(name = "ID_CARD")
+  public class IdCard {
+    ...
+    
+    @OneToOne(mappedBy = "card")
+    private Student student;
+    
+    ...
+  }
+  ```
 
 ## References
 
