@@ -1111,7 +1111,8 @@ We picked `Student` as the relationship owner.
 
 - The owning side `Student` class has a field with the annotation `@OneToOne`.
   We also implemented lazy fetching of the associated `IdCard` entity.
-  The `Student` class stores the relationship as:       
+  The `Student` class stores the relationship as:     
+  
   ```java
   @Entity
   @Table(name = "STUDENT")
@@ -1124,10 +1125,12 @@ We picked `Student` as the relationship owner.
      ...
   }
   ```
+  
 - The non-owning side `IdCard` class has a field with the annotation `@OneToOne` with the
   `mappedBy` attribute set to `card`, which is the relationship field defined
   by the owning side entity `Student`. A student is associated with one id card, and
   we use the `mappedBy` property to ensure the id card is associated with the same student.
+
   ```java
   @Entity
   @Table(name = "ID_CARD")
